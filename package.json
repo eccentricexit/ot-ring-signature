@@ -8,7 +8,7 @@
     "clean": "rimraf dist/",
     "build": "npm run clean && babel src -d dist",
     "restart": "npm run build && node dist/index.js",
-    "dev":"babel-node src/index.js"
+    "dev": "babel-node src/index.js"
   },
   "author": "",
   "license": "ISC",
@@ -19,6 +19,7 @@
   },
   "dependencies": {
     "bn.js": "^4.11.8",
+    "crypto-random-int": "^1.0.1",
     "elliptic": "^6.4.0",
     "ethereumjs-util": "^5.1.3",
     "keccak": "^1.4.0",
