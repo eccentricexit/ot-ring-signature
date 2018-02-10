@@ -15,10 +15,10 @@ export default class Hasher{
     return this.ec.curve.n;
   }
 
-  hash(message){
+  hash_string(message){
     let msgHash = keccakHash('keccak256').update(message).digest('hex');
-    msgHash = new BN(hash.toString(),16);
-    msgHash = hash.mod(this.l());
+    msgHash = new BN(msgHash.toString(),16);
+    msgHash = msgHash.mod(this.l);
 
     return msgHash;
   }
@@ -31,4 +31,5 @@ export default class Hasher{
     console.log('hash_array not implemented');
     return new BN(1);
   }
+
 }
