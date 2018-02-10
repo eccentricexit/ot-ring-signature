@@ -24,10 +24,11 @@ export default class Hasher{
   }
 
   hash_point(point){
-    return this.G().mul(hash_array(point));
+    return this.G.mul(this.hash_array(point));
   }
 
   hash_array(array){
-    
+    console.log('hash_array not implemented');
+    return new BN(1);
   }
 }
