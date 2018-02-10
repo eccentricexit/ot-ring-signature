@@ -5,6 +5,7 @@ import keccakHash from 'keccak';
 import * as cri from 'crypto-random-int';
 import shuffle from 'shuffle-array';
 import {XorShift128Plus} from 'xorshift.js';
+import Signature from './signature.js';
 
 const cryptoRandomInt = cri;
 const ec = new EdDSA('ed25519');
@@ -29,8 +30,9 @@ let S2 = ec.g.mul(s1);
 let ringKeys = [[s1,S1],[s2,S2]];
 let signerKeys = [x,P];
 
-sign('one ring to rule them all', ringKeys, signerKeys);
-
+let msg = 'one ring to rule the all';
+let signature = sign(msg, ringKeys, signerKeys);
+console.log(signature.verify(msg,signerKeys));
 
 function sign(msg, ringKeys, signerKeys){
   ringKeys.push(signerKeys);
@@ -51,7 +53,7 @@ function sign(msg, ringKeys, signerKeys){
   let c = genCC(challenge,w,n,s);
   let r = genRR(challenge,signerKeys,q,c,n,s);
 
-  let signature = {keyImage:I,c,r,ringKeys};
+  let signature = new Signature(I,c,r,ringKeys,ec.g,ec.curve.n);
   return signature;
 }
 
