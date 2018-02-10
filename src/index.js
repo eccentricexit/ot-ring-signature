@@ -19,27 +19,82 @@ const P = ec.g.mul(x);
 //I = x*Hp(P);
 let I = Hp(P).mul(x);
 
-
-
 let s1 = new BN(randomNum(prng),16);
 let S1 = ec.g.mul(s1);
 
 let s2 = new BN(randomNum(prng),16);
 let S2 = ec.g.mul(s1);
 
-const s = 0;
-const ringKeys = [[x,P],[s1,S1],[s2,S2]];
-const n = ringKeys.length;
 
-let q = genQ(n,prng);
-let w = genW(n,s,prng);
+let ringKeys = [[s1,S1],[s2,S2]];
+let signerKeys = [x,P];
 
-let L = genL(q,w,s,ringKeys);
-let R = genR(q,w,s,ringKeys);
+sign('one ring to rule them all', ringKeys, signerKeys);
 
-console.log(s);
 
-function genR(q,w,s,ringKeys){
+function sign(msg, ringKeys, signerKeys){
+  ringKeys.push(signerKeys);
+  const n = ringKeys.length;
+  const s = 2;
+
+  let q = genQ(n,prng);
+  let w = genW(n,s,prng);
+
+  let L = genL(q,w,s,ringKeys);
+  let R = genR(q,w,s,ringKeys,I);
+
+  //getting the non interactive challenge...
+  let msgHash = H(msg);
+  let challenge = H(msg+L+R);
+
+  //computing the response
+  let c = genCC(challenge,w,n,s);
+  let r = genRR(challenge,signerKeys,q,c,n,s);
+
+  let signature = {keyImage:I,c,r,ringKeys};
+  return signature;
+}
+
+function genRR(challenge,signerKeys,q,c,n,s){
+  let r = []
+
+  for(let i=0;i<n;i++){
+    if(i!==s){
+      r.push(q[i]);
+    }else{
+      //(q_array[i] - c_array[i] * k.value) % hasher.group.order
+      let ri = q[i].sub(c[i]);
+      ri = ri.mul(signerKeys[0]);
+      ri = ri.umod(ec.curve.n);
+
+      r.push(ri);
+    }
+  }
+
+  return r;
+}
+
+function genCC(challenge,w,n,s){
+  let c = []
+
+  for(let i=0;i<n;i++){
+    if(i!==s){
+      c.push(w[i]);
+    }else{
+      //(challenge - w_array.inject{|a, b| a + b}) % hasher.group.order
+      let ci = new BN(challenge.toString(),16);
+      let wAcc = w.reduce((acc,val) => {return acc = acc.add(val);},new BN(0,16));
+      ci = ci.sub(wAcc);
+      ci = ci.umod(ec.curve.n);
+
+      c.push(ci);
+    }
+  }
+
+  return c;
+}
+
+function genR(q,w,s,ringKeys,I){
   let R = []
   for(let i=0;i<ringKeys.length;i++){
     let ri = Hp(ringKeys[i][1]).mul(q[i]);
@@ -76,7 +131,7 @@ function genW(n,s,prng){
       w.push(new BN(0));
     }
   }
-  return q;
+  return w;
 }
 
 function genQ(n,prng){
