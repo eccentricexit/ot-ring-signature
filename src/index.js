@@ -1,8 +1,8 @@
-import Hasher from './hasher.js';
-import PrivateKey from './private-key.js';
-import PublicKey from './public-key.js';
-import Prng from './prng.js';
-import Signature from './signature';
+import Hasher from './lib/hasher.js';
+import PrivateKey from './lib/private-key.js';
+import PublicKey from './lib/public-key.js';
+import Prng from './lib/prng.js';
+import Signature from './lib/signature.js';
 
 const prng = new Prng();
 const hasher = new Hasher();
