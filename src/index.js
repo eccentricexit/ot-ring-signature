@@ -15,8 +15,7 @@ const foreign_keys = [new PrivateKey(prng.random,hasher).public_key,
 const msg = 'one ring to rule them all';
 const signature = key.sign(msg,foreign_keys);
 
-
 let public_keys = foreign_keys.slice();
-public_keys.push(key.point);
+public_keys.push(key.public_key);
 
 console.log(signature.verify(msg,public_keys));

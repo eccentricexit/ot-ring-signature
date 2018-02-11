@@ -10,8 +10,26 @@ export default class Signature{
   }
 
   verify(message,public_keys){
-    console.log('signature.verify() not implemented');
-    return false;
+    let ll_array = [];
+    let rr_array = [];
+
+    for(let i=0;i<public_keys.length;i++){
+      ll_array.push(this.hasher.G.mul(new BN(this.r_array[i])).add(public_keys[i].point.mul(new BN(this.c_array[i]))));
+      rr_array.push(this.hasher.hash_point(public_keys[i].point.mul(new BN(this.r_array[i])).add(this.key_image.mul(new BN(this.c_array[i])))));
+    }
+
+    const c_sum = this.c_array.reduce((acc,val) => {return acc = acc.add(new BN(val));},new BN(0)).mod(this.hasher.l).toString('hex');
+
+    const message_digest = this.hasher.hash_string(message);
+    let challenge_arr = [message_digest];
+    challenge_arr = challenge_arr.concat(ll_array);
+    challenge_arr = challenge_arr.concat(rr_array);
+    const challenge = this.hasher.hash_array(challenge_arr);
+
+    console.log(challenge);
+    console.log(c_sum);
+
+    return challenge === c_sum;
   }
 
 }
