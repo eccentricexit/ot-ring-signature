@@ -38,46 +38,48 @@ export default class PrivateKey{
     const r_array = this.generate_r(all_keys,q_array,w_array,c_array,challenge);
 
     let public_keys = foreign_keys;
-    public_keys.push(this.public_key);    
+    public_keys.push(this.public_key);
 
     return new Signature(this.key_image,c_array,r_array,public_keys,this.hasher);
   }
 
+  //correct
   generate_r(all_keys,q_array,w_array,c_array,challenge){
     let r_array = [];
     for(let i=0;i<all_keys.length;i++){
       if(all_keys[i] instanceof PublicKey){
-        r_array.push(q_array[i]);
+        r_array.push(new BN(q_array[i],16));
       }else{
         let ri = new BN(q_array[i],16).sub(all_keys[i].value.mul(c_array[i]));
-        ri = ri.mod(this.hasher.l);
+        ri = ri.mod(this.hasher.l); //perhaps use umod instead of mod
         r_array.push(ri);
       }
     }
     return r_array;
   }
 
+  //correct
   generate_c(all_keys,q_array,w_array,challenge){
     let c_array = [];
     for(let i=0;i<all_keys.length;i++){
       if(all_keys[i] instanceof PublicKey){
-        c_array.push(w_array[i]);
+        c_array.push(new BN(w_array[i],16));
       }else{
         let chNum = new BN(challenge,16);
         let wSum = w_array.reduce((acc,val) => {return acc = acc.add(new BN(val));},new BN(0));
-        let ci = chNum.sub(wSum);
-        ci = ci.mod(this.hasher.l);
+        let ci = chNum.sub(wSum).mod(this.hasher.l); //perhaps use umod instead of mod
         c_array.push(ci);
       }
     }
     return c_array;
   }
 
+  //correct
   generate_rr(all_keys,q_array,w_array){
     let rr_array = [];
 
     for(let i=0;i<all_keys.length;i++){
-      let rri = this.hasher.hash_point(all_keys[i].point);
+      let rri = this.hasher.hash_point(all_keys[i].point).mul(new BN(q_array[i],16));
       rr_array.push(rri);
       if(all_keys[i] instanceof PublicKey){
         rr_array[i] = rr_array[i].add(this.key_image.mul(new BN(w_array[i],16)));
@@ -86,6 +88,7 @@ export default class PrivateKey{
     return rr_array;
   }
 
+  //correct
   generate_ll(all_keys,q_array,w_array){
     let ll_array = [];
     for(let i=0;i<all_keys.length;i++){
