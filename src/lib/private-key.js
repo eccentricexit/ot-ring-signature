@@ -12,7 +12,7 @@ export default class PrivateKey{
   }
 
   get point(){
-    return this.public_key;
+    return this.public_key.point;
   }
 
   sign(message,foreign_keys){
@@ -23,26 +23,67 @@ export default class PrivateKey{
     all_keys.push(this);
     shuffle(all_keys);
 
-    let q_array = this.generate_q(all_keys,seed);
-    let w_array = this.generate_w(all_keys,seed);    
+    const q_array = this.generate_q(all_keys,seed); // hex numbers
+    const w_array = this.generate_w(all_keys,seed); // hex number + 1 BN
 
-    let ll_array = this.generate_ll(all_keys,q_array,w_array);
+    const ll_array = this.generate_ll(all_keys,q_array,w_array); //points
+    const rr_array = this.generate_rr(all_keys,q_array,w_array); //points
 
-    // ll_array, rr_array = generate_ll_rr(all_keys, q_array, w_array)
-    // challenge = hasher.hash_array([message_digest] + ll_array + rr_array)
-    // c_array, r_array = generate_c_r(all_keys, q_array, w_array, challenge)
-    //
-    // public_keys = all_keys.map(&:public_key)
-    // signature = Signature.new(key_image, c_array, r_array, hasher)
-    //
-    // [signature, public_keys]
+    let challenge_arr = [message_digest];
+    challenge_arr = challenge_arr.concat(ll_array);
+    challenge_arr = challenge_arr.concat(rr_array);
+    const challenge = this.hasher.hash_array(challenge_arr);
 
-    let key_image = '';
-    let c_array = '';
-    let r_array = '';
-    let public_keys = [];
+    const c_array = this.generate_c(all_keys,q_array,w_array,challenge);
+    const r_array = this.generate_r(all_keys,q_array,w_array,c_array,challenge);
 
-    return new Signature(this.key_image,c_array,r_array,public_keys,this.hasher)
+    let public_keys = foreign_keys;
+    public_keys.push(this.public_key);    
+
+    return new Signature(this.key_image,c_array,r_array,public_keys,this.hasher);
+  }
+
+  generate_r(all_keys,q_array,w_array,c_array,challenge){
+    let r_array = [];
+    for(let i=0;i<all_keys.length;i++){
+      if(all_keys[i] instanceof PublicKey){
+        r_array.push(q_array[i]);
+      }else{
+        let ri = new BN(q_array[i],16).sub(all_keys[i].value.mul(c_array[i]));
+        ri = ri.mod(this.hasher.l);
+        r_array.push(ri);
+      }
+    }
+    return r_array;
+  }
+
+  generate_c(all_keys,q_array,w_array,challenge){
+    let c_array = [];
+    for(let i=0;i<all_keys.length;i++){
+      if(all_keys[i] instanceof PublicKey){
+        c_array.push(w_array[i]);
+      }else{
+        let chNum = new BN(challenge,16);
+        let wSum = w_array.reduce((acc,val) => {return acc = acc.add(new BN(val));},new BN(0));
+        let ci = chNum.sub(wSum);
+        ci = ci.mod(this.hasher.l);
+        c_array.push(ci);
+      }
+    }
+    return c_array;
+  }
+
+  generate_rr(all_keys,q_array,w_array){
+    let rr_array = [];
+
+    for(let i=0;i<all_keys.length;i++){
+      let rri = this.hasher.hash_point(all_keys[i].point);
+      rr_array.push(rri);
+      if(all_keys[i] instanceof PublicKey){
+        rr_array[i] = rr_array[i].add(this.key_image.mul(new BN(w_array[i],16)));
+      }
+    }
+    return rr_array;
   }
 
   generate_ll(all_keys,q_array,w_array){
@@ -71,13 +112,10 @@ export default class PrivateKey{
 
   generate_q(all_keys,seed){
     let q_array = [];
-
     for(let i=0;i<all_keys.length;i++){
       let qi = this.hasher.hash_array(['q',seed,i]);
-      //console.log(qi);
       q_array.push(qi);
     }
-
     return q_array;
   }
 

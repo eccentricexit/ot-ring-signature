@@ -46,6 +46,8 @@ export default class Hasher{
         hash_array.push(this.hash_string(array[i]));
       }else if(typeof array[i] === 'number'){
         hash_array.push(this.hash_string(array[i].toString()));
+      }else if(array[i].x !== undefined && array[i].y !== undefined){
+        hash_array.push(this.hash_string(array[i].encode('hex').toString()));
       }else{
         console.log(array[i]);
         throw 'hash_array() case not implemented';

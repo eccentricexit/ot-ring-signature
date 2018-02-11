@@ -8,9 +8,9 @@ const prng = new Prng();
 const hasher = new Hasher();
 const key = new PrivateKey(prng.random,hasher);
 
-const foreign_keys = [new PrivateKey(prng.random,hasher).point,
-                      new PrivateKey(prng.random,hasher).point,
-                      new PrivateKey(prng.random,hasher).point];
+const foreign_keys = [new PrivateKey(prng.random,hasher).public_key,
+                      new PrivateKey(prng.random,hasher).public_key,
+                      new PrivateKey(prng.random,hasher).public_key];
 
 const msg = 'one ring to rule them all';
 const signature = key.sign(msg,foreign_keys);
