@@ -49,7 +49,7 @@ export default class PrivateKey{
       }
     }
 
-    return [public_keys,new Signature(this.key_image,c_array,r_array,this.hasher)];
+    return new Signature(this.key_image,c_array,r_array,public_keys,this.hasher);
   }
 
   generate_r(all_keys,q_array,w_array,c_array,challenge){

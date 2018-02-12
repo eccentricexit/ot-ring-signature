@@ -1,14 +1,14 @@
 import BN from 'bn.js';
 
 export default class Signature{
-  constructor(key_image,c_array,r_array,hasher){
+  constructor(key_image,c_array,r_array,public_keys,hasher){
     this.key_image = key_image;
     this.c_array = c_array;
     this.r_array = r_array;
     this.hasher = hasher;
+    this.public_keys = public_keys
   }
 
-  //perhaps the problem is on BN instantiation. Try using .toString on val or 16 as second arg
   verify(message,public_keys){
     let ll_array = [];
     let rr_array = [];
@@ -25,12 +25,6 @@ export default class Signature{
     challenge_arr = challenge_arr.concat(rr_array);
     let challenge = this.hasher.hash_array(challenge_arr);
     challenge = new BN(challenge,16).toString('hex');
-
-    console.log();
-    console.log();
-    console.log();
-    console.log('challenge: ',challenge);
-    console.log('c_sum:     ',c_sum);
 
     return challenge === c_sum;
   }
