@@ -15,6 +15,9 @@ export default class PrivateKey{
     return this.public_key.point;
   }
 
+  /**
+   * @return an array [ring public keys, ring signature]
+   */
   sign(message,foreign_keys){
     const message_digest = this.hasher.hash_string(message);
     const seed = this.hasher.hash_array([this.value,message_digest]);
@@ -26,8 +29,8 @@ export default class PrivateKey{
     const q_array = this.generate_q(all_keys,seed); // hex numbers
     const w_array = this.generate_w(all_keys,seed); // hex number + 1 BN
 
-    const ll_array = this.generate_ll(all_keys,q_array,w_array); //points
-    const rr_array = this.generate_rr(all_keys,q_array,w_array); //points
+    const ll_array = this.generate_ll(all_keys,q_array,w_array);
+    const rr_array = this.generate_rr(all_keys,q_array,w_array,this.key_image);
 
     let challenge_arr = [message_digest];
     challenge_arr = challenge_arr.concat(ll_array);
@@ -37,13 +40,18 @@ export default class PrivateKey{
     const c_array = this.generate_c(all_keys,q_array,w_array,challenge);
     const r_array = this.generate_r(all_keys,q_array,w_array,c_array,challenge);
 
-    let public_keys = foreign_keys.slice();
-    public_keys.push(this.public_key);
+    let public_keys = [];
+    for(let i=0;i<all_keys.length;i++){
+      if(all_keys[i] instanceof PrivateKey){
+        public_keys.push(all_keys[i].public_key);
+      }else{
+        public_keys.push(all_keys[i]);
+      }
+    }
 
-    return new Signature(this.key_image,c_array,r_array,public_keys,this.hasher);
+    return [public_keys,new Signature(this.key_image,c_array,r_array,this.hasher)];
   }
 
-  //correct
   generate_r(all_keys,q_array,w_array,c_array,challenge){
     let r_array = [];
     for(let i=0;i<all_keys.length;i++){
@@ -51,14 +59,13 @@ export default class PrivateKey{
         r_array.push(new BN(q_array[i],16));
       }else{
         let ri = new BN(q_array[i],16).sub(all_keys[i].value.mul(c_array[i]));
-        ri = ri.mod(this.hasher.l); //perhaps use umod instead of mod
+        ri = ri.umod(this.hasher.l); //perhaps use umod instead of mod
         r_array.push(ri);
       }
     }
     return r_array;
   }
 
-  //correct
   generate_c(all_keys,q_array,w_array,challenge){
     let c_array = [];
     for(let i=0;i<all_keys.length;i++){
@@ -66,29 +73,29 @@ export default class PrivateKey{
         c_array.push(new BN(w_array[i],16));
       }else{
         let chNum = new BN(challenge,16);
-        let wSum = w_array.reduce((acc,val) => {return acc = acc.add(new BN(val));},new BN(0));
-        let ci = chNum.sub(wSum).mod(this.hasher.l); //perhaps use umod instead of mod
+        let wSum = w_array.reduce((acc,val) => {return acc = acc.add(new BN(val,16));},new BN(0,16));
+        let ci = chNum.sub(wSum).umod(this.hasher.l); //perhaps use umod instead of mod
         c_array.push(ci);
       }
     }
     return c_array;
   }
 
-  //correct
-  generate_rr(all_keys,q_array,w_array){
+  generate_rr(all_keys,q_array,w_array,key_image){
     let rr_array = [];
 
     for(let i=0;i<all_keys.length;i++){
-      let rri = this.hasher.hash_point(all_keys[i].point).mul(new BN(q_array[i],16));
-      rr_array.push(rri);
+      let rri =all_keys[i].point;
+      rri = this.hasher.hash_point(rri);
+      rri = rri.mul(new BN(q_array[i],16));
       if(all_keys[i] instanceof PublicKey){
-        rr_array[i] = rr_array[i].add(this.key_image.mul(new BN(w_array[i],16)));
+        rri = rri.add(key_image.mul(new BN(w_array[i],16)));
       }
+      rr_array.push(rri);
     }
     return rr_array;
   }
 
-  //correct
   generate_ll(all_keys,q_array,w_array){
     let ll_array = [];
     for(let i=0;i<all_keys.length;i++){
@@ -107,7 +114,7 @@ export default class PrivateKey{
       if(all_keys[i] instanceof PublicKey){
         w_array.push(this.hasher.hash_array(['w',seed,i]));
       }else{
-        w_array.push(new BN(0));
+        w_array.push(new BN(0,16));
       }
     }
     return w_array;
