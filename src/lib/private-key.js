@@ -37,7 +37,7 @@ export default class PrivateKey{
     const c_array = this.generate_c(all_keys,q_array,w_array,challenge);
     const r_array = this.generate_r(all_keys,q_array,w_array,c_array,challenge);
 
-    let public_keys = foreign_keys;
+    let public_keys = foreign_keys.slice();
     public_keys.push(this.public_key);
 
     return new Signature(this.key_image,c_array,r_array,public_keys,this.hasher);
