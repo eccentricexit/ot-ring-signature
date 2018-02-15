@@ -56,7 +56,7 @@ export default class PrivateKey{
         r_array.push(new BN(q_array[i],16));
       }else{
         let ri = new BN(q_array[i],16).sub(all_keys[i].value.mul(c_array[i]));
-        ri = ri.umod(this.hasher.l); //perhaps use umod instead of mod
+        ri = ri.umod(this.hasher.l);
         r_array.push(ri);
       }
     }
@@ -71,7 +71,7 @@ export default class PrivateKey{
       }else{
         let chNum = new BN(challenge,16);
         let wSum = w_array.reduce((acc,val) => {return acc = acc.add(new BN(val,16));},new BN(0,16));
-        let ci = chNum.sub(wSum).umod(this.hasher.l); //perhaps use umod instead of mod
+        let ci = chNum.sub(wSum).umod(this.hasher.l);
         c_array.push(ci);
       }
     }
