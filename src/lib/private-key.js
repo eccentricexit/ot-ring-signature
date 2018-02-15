@@ -15,9 +15,6 @@ export default class PrivateKey{
     return this.public_key.point;
   }
 
-  /**
-   * @return an array [ring public keys, ring signature]
-   */
   sign(message,foreign_keys){
     const message_digest = this.hasher.hash_string(message);
     const seed = this.hasher.hash_array([this.value,message_digest]);
